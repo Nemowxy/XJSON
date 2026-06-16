@@ -27,6 +27,7 @@ export interface JsonNode {
   id: string; // 稳定 id（基于 path）
   key: string | null; // 根为 null；数组项为索引字符串
   path: string; // JSONPath，如 $.users[0].name
+  keys: (string | number)[]; // 从根到当前节点的访问键序列，根为 []
   type: JsonValueType;
   value?: string | number | boolean | null; // 标量值
   children?: JsonNode[];

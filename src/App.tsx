@@ -3,8 +3,9 @@ import { listen } from "@tauri-apps/api/event";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { useAppStore } from "@/stores/appStore";
 import { useThemeStore, applyThemeToDom } from "@/stores/themeStore";
+import { useEditorStore } from "@/stores/editorStore";
 import { parseJson } from "@/lib/json";
-import { openPath } from "@/lib/files";
+import { openPath, saveTab, saveTabAs } from "@/lib/files";
 import { isTauri } from "@/lib/utils";
 import { Titlebar } from "@/components/chrome/Titlebar";
 import { Sidebar } from "@/components/chrome/Sidebar";
@@ -54,6 +55,22 @@ function App() {
       unlisten.then((fn) => fn());
     };
   }, []);
+
+  // 全局快捷键：Cmd/Ctrl+S 保存，Cmd/Ctrl+Shift+S 另存为
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === "s") {
+        e.preventDefault();
+        const activeTabId = useEditorStore.getState().activeTabId;
+        if (activeModule === "editor" && activeTabId) {
+          if (e.shiftKey) saveTabAs(activeTabId);
+          else saveTab(activeTabId);
+        }
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [activeModule]);
 
   return (
     <TooltipProvider delayDuration={200}>
