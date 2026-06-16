@@ -4,11 +4,21 @@ import { uid } from "@/lib/utils";
 
 export type PanelLayout = "split" | "tree-only" | "raw-only";
 
+/** 当前选中的树节点（用于在编辑器中聚焦显示其 value） */
+export interface SelectedNode {
+  tabId: string;
+  path: string;
+  keys: (string | number)[];
+  key: string | null;
+}
+
 interface EditorState {
   tabs: Tab[];
   activeTabId: string | null;
   panelLayout: PanelLayout;
   searchQuery: string;
+  selectedNode: SelectedNode | null;
+  splitRatio: number; // 分栏布局下树视图占比（0.2 ~ 0.8）
 
   // 派生
   activeTab: () => Tab | undefined;
@@ -27,6 +37,8 @@ interface EditorState {
 
   setPanelLayout: (l: PanelLayout) => void;
   setSearchQuery: (q: string) => void;
+  selectNode: (node: SelectedNode | null) => void;
+  setSplitRatio: (r: number) => void;
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
@@ -34,6 +46,8 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   activeTabId: null,
   panelLayout: "split",
   searchQuery: "",
+  selectedNode: null,
+  splitRatio: 0.5,
 
   activeTab: () => {
     const { tabs, activeTabId } = get();
@@ -80,7 +94,15 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     });
   },
 
-  setActive: (activeTabId) => set({ activeTabId }),
+  setActive: (activeTabId) =>
+    set((s) => ({
+      activeTabId,
+      // 切换 tab 时清除非当前 tab 的选中节点
+      selectedNode:
+        s.selectedNode && s.selectedNode.tabId === activeTabId
+          ? s.selectedNode
+          : null,
+    })),
 
   updateContent: (id, content) =>
     set((s) => ({
@@ -113,16 +135,22 @@ export const useEditorStore = create<EditorState>((set, get) => ({
         const next = tabs[idx] ?? tabs[idx - 1] ?? tabs[0];
         activeTabId = next?.id ?? null;
       }
-      return { tabs, activeTabId };
+      const selectedNode =
+        s.selectedNode && s.selectedNode.tabId === activeTabId
+          ? s.selectedNode
+          : null;
+      return { tabs, activeTabId, selectedNode };
     }),
 
   closeOthers: (id) =>
     set((s) => ({
       tabs: s.tabs.filter((t) => t.id === id),
       activeTabId: id,
+      selectedNode:
+        s.selectedNode && s.selectedNode.tabId === id ? s.selectedNode : null,
     })),
 
-  closeAll: () => set({ tabs: [], activeTabId: null }),
+  closeAll: () => set({ tabs: [], activeTabId: null, selectedNode: null }),
 
   reorderTabs: (from, to) =>
     set((s) => {
@@ -134,4 +162,6 @@ export const useEditorStore = create<EditorState>((set, get) => ({
 
   setPanelLayout: (panelLayout) => set({ panelLayout }),
   setSearchQuery: (searchQuery) => set({ searchQuery }),
+  selectNode: (selectedNode) => set({ selectedNode }),
+  setSplitRatio: (r) => set({ splitRatio: Math.min(0.8, Math.max(0.2, r)) }),
 }));

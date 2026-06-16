@@ -9,11 +9,12 @@ import {
   PanelRight,
   Columns2,
   Check,
+  Save,
 } from "lucide-react";
 import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useEditorStore } from "@/stores/editorStore";
 import { formatJson, minifyJson, parseJson, maxDepth } from "@/lib/json";
-import { openFileDialog } from "@/lib/files";
+import { openFileDialog, saveTab, saveTabAs } from "@/lib/files";
 import { cn, isTauri } from "@/lib/utils";
 import { Hint } from "@/components/ui/tooltip";
 
@@ -63,6 +64,13 @@ export function Toolbar() {
       <div className="mx-1 h-5 w-px bg-border-subtle" />
 
       <ToolButton label="打开文件" onClick={openFileDialog} icon={<Download size={15} />} />
+      <ToolButton
+        label={activeTab.isDirty ? "保存（Cmd/Ctrl+S）·有未保存修改" : "保存（Cmd/Ctrl+S）"}
+        onClick={() => saveTab(activeTab.id)}
+        onShiftClick={() => saveTabAs(activeTab.id)}
+        icon={<Save size={15} />}
+        highlight={activeTab.isDirty}
+      />
       <ToolButton label="格式化" onClick={doFormat} icon={<AlignLeft size={15} />} />
       <ToolButton label="压缩" onClick={doMinify} icon={<Minimize2 size={15} />} />
       <ToolButton
@@ -109,18 +117,30 @@ export function Toolbar() {
 function ToolButton({
   label,
   onClick,
+  onShiftClick,
   icon,
+  highlight,
 }: {
   label: string;
   onClick: () => void;
+  onShiftClick?: () => void;
   icon: React.ReactNode;
+  highlight?: boolean;
 }) {
   return (
     <Hint label={label}>
       <button
-        onClick={onClick}
+        onClick={(e) => {
+          if (e.shiftKey && onShiftClick) onShiftClick();
+          else onClick();
+        }}
         aria-label={label}
-        className="flex h-8 items-center gap-1.5 rounded-md border border-border-subtle bg-surface px-2.5 text-xs text-text-secondary transition hover:bg-elevated hover:text-text-primary"
+        className={cn(
+          "flex h-8 items-center gap-1.5 rounded-md border px-2.5 text-xs transition",
+          highlight
+            ? "border-accent/50 bg-accent/15 text-accent hover:bg-accent/25"
+            : "border-border-subtle bg-surface text-text-secondary hover:bg-elevated hover:text-text-primary",
+        )}
       >
         {icon}
       </button>

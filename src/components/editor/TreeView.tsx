@@ -5,6 +5,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import type { JsonNode } from "@/types";
 import { buildTree, parseJson, typeBadge, nodeMatches } from "@/lib/json";
 import { cn, isTauri } from "@/lib/utils";
+import { useEditorStore } from "@/stores/editorStore";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -18,6 +19,7 @@ interface TreeViewProps {
   query: string;
   height: number;
   width: number;
+  tabId: string;
 }
 
 const badgeColor: Record<string, string> = {
@@ -29,7 +31,7 @@ const badgeColor: Record<string, string> = {
   null: "text-syntax-null",
 };
 
-export function TreeView({ content, query, height, width }: TreeViewProps) {
+export function TreeView({ content, query, height, width, tabId }: TreeViewProps) {
   const parsed = useMemo(() => parseJson(content), [content]);
   const root = useMemo(
     () => (parsed.ok ? buildTree(parsed.value) : null),
@@ -45,10 +47,8 @@ export function TreeView({ content, query, height, width }: TreeViewProps) {
   }
   if (!root) return null;
 
-  // react-arborist 需要数组形式的根
-  const data = root.children && (root.type === "object" || root.type === "array")
-    ? root.children
-    : [root];
+  // 始终以 $ 根节点作为树的根，便于查看完整文档 / 恢复默认显示
+  const data = [root];
 
   return (
     <Tree<JsonNode>
@@ -56,6 +56,7 @@ export function TreeView({ content, query, height, width }: TreeViewProps) {
       idAccessor="id"
       childrenAccessor={(n) => n.children ?? null}
       openByDefault={false}
+      initialOpenState={{ $: true }}
       width={width}
       height={height}
       indent={16}
@@ -63,7 +64,7 @@ export function TreeView({ content, query, height, width }: TreeViewProps) {
       searchTerm={query}
       searchMatch={(node, term) => nodeMatches(node.data, term)}
     >
-      {(props) => <Row {...props} query={query} />}
+      {(props) => <Row {...props} query={query} tabId={tabId} />}
     </Tree>
   );
 }
@@ -72,17 +73,32 @@ function Row({
   node,
   style,
   query,
-}: NodeRendererProps<JsonNode> & { query: string }) {
+  tabId,
+}: NodeRendererProps<JsonNode> & { query: string; tabId: string }) {
   const data = node.data;
   const isBranch = data.type === "object" || data.type === "array";
   const matched = query ? nodeMatches(data, query) : false;
   const [copied, setCopied] = useState(false);
+  const selectNode = useEditorStore((s) => s.selectNode);
+  const isSelected = useEditorStore(
+    (s) => s.selectedNode?.tabId === tabId && s.selectedNode?.path === data.path,
+  );
 
   const copy = async (text: string) => {
     if (isTauri()) await writeText(text);
     else await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 800);
+  };
+
+  const handleClick = () => {
+    if (isBranch) node.toggle();
+    selectNode({
+      tabId,
+      path: data.path,
+      keys: data.keys,
+      key: data.key,
+    });
   };
 
   const valueText =
@@ -102,8 +118,9 @@ function Row({
           className={cn(
             "flex items-center gap-1.5 rounded px-1 font-mono text-xs hover:bg-surface/60",
             matched && "bg-warning-soft",
+            isSelected && "bg-accent/15 ring-1 ring-inset ring-accent/40",
           )}
-          onClick={() => isBranch && node.toggle()}
+          onClick={handleClick}
         >
           <span className="flex h-4 w-4 shrink-0 items-center justify-center text-text-tertiary">
             {isBranch ? (
@@ -117,8 +134,10 @@ function Row({
           <span className={cn("shrink-0 text-[10px]", badgeColor[data.type])}>
             {typeBadge(data.type)}
           </span>
-          {data.key !== null && (
+          {data.key !== null ? (
             <span className="shrink-0 text-syntax-key">{data.key}:</span>
+          ) : (
+            <span className="shrink-0 text-syntax-key">$</span>
           )}
           {isBranch ? (
             <span className="text-text-tertiary">

@@ -19,6 +19,7 @@ import { writeText } from "@tauri-apps/plugin-clipboard-manager";
 import { useEditorStore } from "@/stores/editorStore";
 import type { Tab } from "@/types";
 import { cn, isTauri } from "@/lib/utils";
+import { saveTab, saveTabAs } from "@/lib/files";
 import {
   ContextMenu,
   ContextMenuTrigger,
@@ -208,6 +209,11 @@ function SortableTab({
         </div>
       </ContextMenuTrigger>
       <ContextMenuContent>
+        <ContextMenuItem onSelect={() => saveTab(tab.id)}>
+          保存 {tab.isDirty && "·"}
+        </ContextMenuItem>
+        <ContextMenuItem onSelect={() => saveTabAs(tab.id)}>另存为…</ContextMenuItem>
+        <ContextMenuSeparator />
         <ContextMenuItem onSelect={onClose}>关闭</ContextMenuItem>
         <ContextMenuItem onSelect={onCloseOthers}>关闭其他</ContextMenuItem>
         <ContextMenuItem onSelect={onCloseAll}>关闭全部</ContextMenuItem>
