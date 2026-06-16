@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+dist/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Tauri
+src-tauri/target/
+src-tauri/WixTools/
+src-tauri/gen/
+
+# Editor
+.vscode/*
+!.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build artifacts
+*.dmg
+*.msi
+*.exe
+*.deb
+*.AppImage
+
+# Lock files (keep package-lock.json, ignore others)
+pnpm-lock.yaml
+yarn.lock
+
+# Tauri temp
+.tauri/

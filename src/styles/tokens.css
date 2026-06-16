@@ -1,0 +1,80 @@
+/* XJSON design tokens — extracted from docs/design.pen
+   Two themes: Dark (default) + Editorial. Switched via [data-theme] on <html>. */
+
+:root,
+[data-theme="dark"] {
+  /* surfaces */
+  --bg-window: #1c1c1e;
+  --bg-sidebar: #161618;
+  --bg-surface: #2a2a2c;
+  --bg-elevated: #323234;
+  --bg-inset: #141416;
+  /* borders */
+  --border-subtle: #3a3a3c;
+  --border-strong: #48484a;
+  /* text */
+  --text-primary: #f5f5f7;
+  --text-secondary: #9a9aa0;
+  --text-tertiary: #636366;
+  /* accent + states */
+  --accent: #0a84ff;
+  --accent-soft: #0a84ff26;
+  --success: #30d158;
+  --success-soft: #30d15826;
+  --danger: #ff453a;
+  --danger-soft: #ff453a26;
+  --warning: #ffd60a;
+  --warning-soft: #ffd60a26;
+  /* code syntax */
+  --syntax-key: #79c0ff;
+  --syntax-string: #7ee787;
+  --syntax-number: #ffa657;
+  --syntax-bool: #d2a8ff;
+  --syntax-null: #ff7b72;
+  --syntax-punct: #8b949e;
+  /* fonts */
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-serif: "Inter", system-ui, sans-serif;
+  /* monaco theme name hook */
+  --monaco-theme: "xjson-dark";
+  color-scheme: dark;
+}
+
+[data-theme="editorial"] {
+  /* paper surfaces */
+  --bg-window: #fcfaf7;
+  --bg-sidebar: #f5f0e8;
+  --bg-surface: #ffffff;
+  --bg-elevated: #f5f0e8;
+  --bg-inset: #efe8dc;
+  /* hairlines */
+  --border-subtle: #e7e0d6;
+  --border-strong: #d8cfc0;
+  /* ink */
+  --text-primary: #1c1814;
+  --text-secondary: #6b6357;
+  --text-tertiary: #9c9385;
+  /* accent + states (burnt orange) */
+  --accent: #c2410c;
+  --accent-soft: #c2410c1f;
+  --success: #4d6b2f;
+  --success-soft: #4d6b2f14;
+  --danger: #a13d2d;
+  --danger-soft: #a13d2d14;
+  --warning: #b45309;
+  --warning-soft: #b4530914;
+  /* code syntax (editorial) */
+  --syntax-key: #2a5a55;
+  --syntax-string: #4d6b2f;
+  --syntax-number: #b45309;
+  --syntax-bool: #7c3a6b;
+  --syntax-null: #a13d2d;
+  --syntax-punct: #9c9385;
+  /* fonts */
+  --font-ui: "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --font-serif: "Newsreader", Georgia, serif;
+  --monaco-theme: "xjson-editorial";
+  color-scheme: light;
+}
