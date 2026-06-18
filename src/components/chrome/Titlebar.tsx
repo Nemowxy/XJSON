@@ -21,9 +21,12 @@ export function Titlebar() {
     activeModule === "editor" && activeTab ? activeTab.fileName : MODULE_TITLES[activeModule];
 
   return (
-    <div className="drag-region flex h-11 shrink-0 items-center border-b border-border-subtle bg-sidebar px-4">
+    <div
+      data-tauri-drag-region
+      className="drag-region flex h-11 shrink-0 items-center border-b border-border-subtle bg-sidebar px-4"
+    >
       {/* 左侧占位（为系统交通灯留空间） */}
-      <div className="w-[72px]" />
+      <div data-tauri-drag-region className="w-[72px]" />
 
       {/* 标题（带 logo） */}
       <div className="pointer-events-none flex flex-1 items-center justify-center gap-2 text-xs">
