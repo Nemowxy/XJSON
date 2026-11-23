@@ -91,14 +91,14 @@ export function ClipboardWatchButton({
               aria-label={watch ? "关闭剪贴板监听" : "开启剪贴板监听"}
               onClick={toggle}
               className={cn(
-                "relative mt-0.5 h-5 w-9 shrink-0 rounded-full transition-colors",
+                "relative mt-0.5 h-5 w-9 shrink-0 appearance-none rounded-full p-0 transition-colors",
                 watch ? "bg-accent" : "bg-border-strong",
               )}
             >
               <span
                 className={cn(
-                  "absolute top-0.5 h-4 w-4 rounded-full bg-text-primary transition-transform",
-                  watch ? "translate-x-4" : "translate-x-0.5",
+                  "absolute left-0.5 top-0.5 h-4 w-4 rounded-full bg-text-primary transition-transform",
+                  watch ? "translate-x-4" : "translate-x-0",
                 )}
               />
             </button>
