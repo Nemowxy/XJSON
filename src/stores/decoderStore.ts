@@ -3,6 +3,8 @@ import { invoke } from "@tauri-apps/api/core";
 import type { DecodeStep } from "@/types";
 import { isTauri } from "@/lib/utils";
 import { decodeStringJs } from "@/lib/decode-detect";
+import { parseJson } from "@/lib/json";
+import { useAppStore } from "@/stores/appStore";
 
 interface DecoderState {
   input: string;
@@ -40,6 +42,8 @@ export const useDecoderStore = create<DecoderState>((set, get) => ({
         steps = decodeStringJs(input);
       }
       set({ steps, running: false });
+      const output = steps.length > 0 ? steps[steps.length - 1].output : input;
+      if (parseJson(output).ok) useAppStore.getState().addRecent(output);
     } catch (e) {
       set({ running: false, error: e instanceof Error ? e.message : String(e) });
     }

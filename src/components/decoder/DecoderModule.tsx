@@ -38,7 +38,7 @@ export function DecoderModule() {
     <div className="scrollbar-thin flex h-full flex-col overflow-y-auto">
       <div className="mx-auto flex w-full max-w-3xl flex-col gap-5 p-6">
         <div>
-          <h1 className="text-base font-semibold text-text-primary">
+          <h1 className="font-serif text-base font-semibold text-text-primary">
             String → JSON 解码器
           </h1>
           <p className="mt-1 text-xs text-text-secondary">
