@@ -48,33 +48,37 @@ export function ClipboardWatchButton({
       ? "剪贴板里有 JSON"
       : "剪贴板监听已开启";
 
+  // 高亮只表示浮层开着，和模块选中态分开。监听开着只靠开关；绿点只表示剪贴板里有合法 JSON。
+  const railButton = (
+    <button
+      type="button"
+      aria-label="剪贴板监听"
+      aria-expanded={open}
+      onClick={onToggle}
+      className={cn(
+        "relative flex h-12 w-12 items-center justify-center rounded-md transition-colors",
+        open
+          ? "bg-surface text-text-primary"
+          : "text-text-tertiary hover:bg-surface hover:text-text-secondary",
+      )}
+    >
+      <Clipboard size={20} strokeWidth={1.8} />
+      {hasJson && (
+        <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-success ring-2 ring-sidebar" />
+      )}
+    </button>
+  );
+
   return (
     <div className="relative">
-      <Hint label={hint}>
-        <button
-          type="button"
-          aria-label="剪贴板监听"
-          aria-expanded={open}
-          onClick={onToggle}
-          className={cn(
-            "relative flex h-12 w-12 items-center justify-center rounded-md transition-colors",
-            watch
-              ? "bg-accent-soft text-accent"
-              : "text-text-tertiary hover:bg-surface hover:text-text-secondary",
-          )}
-        >
-          <Clipboard size={20} strokeWidth={watch ? 2.2 : 1.8} />
-          {hasJson && (
-            <span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-success ring-2 ring-sidebar" />
-          )}
-        </button>
-      </Hint>
+      {/* 浮层打开时不再挂 tooltip，避免贴在窗口底边被裁切后叠到卡片上 */}
+      {open ? railButton : <Hint label={hint}>{railButton}</Hint>}
       {open && (
-        <div className="absolute bottom-0 left-full z-40 ml-2 w-[300px] rounded-md border border-border-subtle bg-elevated p-3 shadow-xl">
+        <div className="absolute bottom-0 left-full z-40 ml-2 max-h-[min(420px,calc(100vh-1.5rem))] w-[300px] overflow-y-auto rounded-md border border-border-subtle bg-elevated p-3 shadow-xl">
           <div className="flex items-start justify-between gap-3">
             <div>
               <div className="text-xs font-medium text-text-primary">监听剪贴板</div>
-              <p className="mt-0.5 text-2xs leading-relaxed text-text-tertiary">
+              <p className="mt-0.5 text-xs leading-relaxed text-text-secondary">
                 {isTauri()
                   ? "发现合法 JSON 时只在图标上显示绿点，不会自动跳转或改写内容。"
                   : "读取系统剪贴板只在桌面版可用。"}
@@ -115,7 +119,7 @@ export function ClipboardWatchButton({
               </div>
             </div>
           ) : watch ? (
-            <p className="mt-3 text-2xs text-text-tertiary">
+            <p className="mt-3 text-xs text-text-secondary">
               正在监听，剪贴板里还没有合法 JSON。
             </p>
           ) : null}

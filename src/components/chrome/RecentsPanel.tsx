@@ -30,7 +30,7 @@ export function RecentsList({
   const items = typeof limit === "number" ? recents.slice(0, limit) : recents;
 
   if (items.length === 0) {
-    return <p className="px-2 py-3 text-xs text-text-tertiary">还没有最近片段</p>;
+    return <p className="px-2 py-3 text-xs text-text-secondary">还没有最近片段</p>;
   }
 
   return (
@@ -74,26 +74,29 @@ export function RecentsButton({
   const count = useAppStore((s) => s.recents.length);
   const clearRecents = useAppStore((s) => s.clearRecents);
 
+  const hint = count > 0 ? `最近片段 · ${count}` : "最近片段";
+  const railButton = (
+    <button
+      type="button"
+      aria-label="最近片段"
+      aria-expanded={open}
+      onClick={onToggle}
+      className={cn(
+        "flex h-12 w-12 items-center justify-center rounded-md transition-colors",
+        open
+          ? "bg-surface text-text-primary"
+          : "text-text-tertiary hover:bg-surface hover:text-text-secondary",
+      )}
+    >
+      <History size={20} strokeWidth={1.8} />
+    </button>
+  );
+
   return (
     <div className="relative">
-      <Hint label={count > 0 ? `最近片段 · ${count}` : "最近片段"}>
-        <button
-          type="button"
-          aria-label="最近片段"
-          aria-expanded={open}
-          onClick={onToggle}
-          className={cn(
-            "flex h-12 w-12 items-center justify-center rounded-md transition-colors",
-            open
-              ? "bg-surface text-text-primary"
-              : "text-text-tertiary hover:bg-surface hover:text-text-secondary",
-          )}
-        >
-          <History size={20} strokeWidth={1.8} />
-        </button>
-      </Hint>
+      {open ? railButton : <Hint label={hint}>{railButton}</Hint>}
       {open && (
-        <div className="absolute bottom-0 left-full z-40 ml-2 flex max-h-[min(420px,70vh)] w-[300px] flex-col rounded-md border border-border-subtle bg-elevated p-2 shadow-xl">
+        <div className="absolute bottom-0 left-full z-40 ml-2 flex max-h-[min(420px,calc(100vh-1.5rem))] w-[300px] flex-col overflow-hidden rounded-md border border-border-subtle bg-elevated p-2 shadow-xl">
           <div className="flex items-center justify-between px-2 pb-1">
             <span className="text-2xs font-semibold uppercase tracking-wide text-text-tertiary">
               最近片段
@@ -108,7 +111,7 @@ export function RecentsButton({
               </button>
             )}
           </div>
-          <p className="px-2 pb-1 text-2xs text-text-tertiary">
+          <p className="px-2 pb-1 text-xs text-text-secondary">
             打开文件、粘贴或解码成功后会记在这里，最多 20 条。
           </p>
           <div className="scrollbar-thin min-h-0 flex-1 overflow-y-auto">
