@@ -44,6 +44,18 @@ fn same_file(a: &Path, b: &Path) -> bool {
     }
 }
 
+fn is_associated_file(path: &Path) -> bool {
+    if !path.is_file() {
+        return false;
+    }
+    let Some(ext) = path.extension().and_then(|ext| ext.to_str()) else {
+        return false;
+    };
+    OPEN_EXTENSIONS
+        .iter()
+        .any(|candidate| ext.eq_ignore_ascii_case(candidate))
+}
+
 /// Turn one CLI argument into a readable file path.
 /// Flags and anything that is not an associated file are ignored so `tauri dev`
 /// arguments do not open random paths.
@@ -57,14 +69,7 @@ fn file_arg_path(arg: &str) -> Option<PathBuf> {
     } else {
         PathBuf::from(trimmed)
     };
-    if !path.is_file() {
-        return None;
-    }
-    let ext = path.extension().and_then(|ext| ext.to_str())?;
-    if !OPEN_EXTENSIONS
-        .iter()
-        .any(|candidate| ext.eq_ignore_ascii_case(candidate))
-    {
+    if !is_associated_file(&path) {
         return None;
     }
     Some(path)
@@ -93,11 +98,11 @@ where
     paths
 }
 
-#[cfg(any(target_os = "macos", target_os = "ios", target_os = "android"))]
+#[cfg(any(test, target_os = "macos", target_os = "ios", target_os = "android"))]
 fn paths_from_opened_urls(urls: Vec<tauri::Url>) -> Vec<String> {
     urls.into_iter()
         .filter_map(|url| url.to_file_path().ok())
-        .filter(|path| path.is_file())
+        .filter(|path| is_associated_file(path))
         .map(|path| path.to_string_lossy().into_owned())
         .collect()
 }
@@ -173,6 +178,27 @@ mod tests {
         ]);
 
         assert_eq!(got, vec![file.to_string_lossy().to_string()]);
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn opened_urls_skip_unassociated_files() {
+        let dir = std::env::temp_dir().join(format!("xjson-opened-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        let json = dir.join("sample.json");
+        let png = dir.join("pic.png");
+        let md = dir.join("notes.md");
+        std::fs::write(&json, b"{}").unwrap();
+        std::fs::write(&png, b"png").unwrap();
+        std::fs::write(&md, b"md").unwrap();
+
+        let urls = vec![
+            tauri::Url::from_file_path(&png).unwrap(),
+            tauri::Url::from_file_path(&md).unwrap(),
+            tauri::Url::from_file_path(&json).unwrap(),
+        ];
+        let got = super::paths_from_opened_urls(urls);
+        assert_eq!(got, vec![json.to_string_lossy().to_string()]);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

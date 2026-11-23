@@ -96,14 +96,19 @@ function App() {
     };
     listen(OPEN_FILES_EVENT, () => {
       void drain();
-    }).then((fn) => {
-      if (cancelled) {
-        fn();
-        return;
-      }
-      unlisten = fn;
-      void drain();
-    });
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+          return;
+        }
+        unlisten = fn;
+        void drain();
+      })
+      .catch((err) => {
+        console.error("监听打开文件失败", err);
+        void drain();
+      });
     return () => {
       cancelled = true;
       unlisten?.();
