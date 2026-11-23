@@ -1,9 +1,11 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import Editor, { type Monaco, type OnMount, loader } from "@monaco-editor/react";
 import type { editor } from "monaco-editor";
 import { useThemeStore } from "@/stores/themeStore";
+import { useAppStore } from "@/stores/appStore";
 import { registerMonacoThemes, monacoThemeFor } from "@/lib/monaco";
 import { parseJson } from "@/lib/json";
+import { monoFontFamily } from "@/lib/platform";
 
 // 配置 Monaco 使用本地文件（避免 CSP 阻止 CDN）
 loader.config({ paths: { vs: '/vs' } });
@@ -27,7 +29,34 @@ export function RawEditor({ value, onChange }: RawEditorProps) {
     monacoRef.current = monaco;
     monaco.editor.setTheme(monacoThemeFor(theme));
     validate(value);
+    // 只记录这次粘贴进去、且本身能解析的片段，避免每次击键都写入最近列表。
+    ed.onDidPaste((event) => {
+      const pasted = ed.getModel()?.getValueInRange(event.range) ?? "";
+      useAppStore.getState().addRecent(pasted);
+    });
   };
+
+  useEffect(() => {
+    const family = theme === "editorial" ? "IBM Plex Mono" : "JetBrains Mono";
+    const fontFamily = monoFontFamily(theme);
+    let cancelled = false;
+    const apply = () => {
+      if (cancelled) return;
+      editorRef.current?.updateOptions({ fontFamily });
+      const remeasure = (
+        monacoRef.current?.editor as { remeasureFonts?: () => void } | undefined
+      )?.remeasureFonts;
+      remeasure?.();
+    };
+    if (typeof document !== "undefined" && document.fonts?.load) {
+      document.fonts.load(`13px "${family}"`).then(apply).catch(apply);
+    } else {
+      apply();
+    }
+    return () => {
+      cancelled = true;
+    };
+  }, [theme]);
 
   const validate = (text: string) => {
     const monaco = monacoRef.current;
@@ -70,7 +99,7 @@ export function RawEditor({ value, onChange }: RawEditorProps) {
         validate(next);
       }}
       options={{
-        fontFamily: "var(--font-mono)",
+        fontFamily: monoFontFamily(theme),
         fontSize: 13,
         lineHeight: 20,
         minimap: { enabled: false },

@@ -2,6 +2,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { open, save } from "@tauri-apps/plugin-dialog";
 import type { FileContent } from "@/types";
 import { useEditorStore } from "@/stores/editorStore";
+import { useAppStore } from "@/stores/appStore";
 import { isTauri } from "@/lib/utils";
 
 const ACCEPT_EXT = ["json", "jsonc", "json5", "cfg", "conf", "config", "lock", "txt"];
@@ -29,6 +30,7 @@ export async function openPath(path: string) {
   try {
     const fc = await invoke<FileContent>("read_json_file", { path });
     store.openFromFile(fc.filePath, fc.fileName, fc.content);
+    useAppStore.getState().addRecent(fc.content);
   } catch (e) {
     console.error("打开文件失败", e);
   }
@@ -46,6 +48,7 @@ async function openViaBrowser() {
       for (const file of files) {
         const content = await file.text();
         store.openFromFile(file.name, file.name, content);
+        useAppStore.getState().addRecent(content);
       }
       resolve();
     };

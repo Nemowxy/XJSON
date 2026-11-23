@@ -18,6 +18,9 @@ tauri-plugin-fs = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-clipboard-manager = "2"
 tauri-plugin-opener = "2"
+# 2.3.7 is the newest release that still builds against this lockfile's Tauri 2.11 / rustc 1.83.
+# 2.4+ depends on tauri 2.10 and resolves tauri-utils 2.10, which needs rustc 1.90.
+tauri-plugin-single-instance = "=2.3.7"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.22"

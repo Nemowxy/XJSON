@@ -1,5 +1,7 @@
 import { useEffect } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
+import { getCurrentWebview } from "@tauri-apps/api/webview";
 import { readText } from "@tauri-apps/plugin-clipboard-manager";
 import { useAppStore } from "@/stores/appStore";
 import { useThemeStore, applyThemeToDom } from "@/stores/themeStore";
@@ -15,44 +17,101 @@ import { DecoderModule } from "@/components/decoder/DecoderModule";
 import { DiffModule } from "@/components/diff/DiffModule";
 import { TooltipProvider } from "@/components/ui/tooltip";
 
+const OPEN_FILES_EVENT = "xjson://open-files";
+
+async function openPathsInEditor(paths: string[]) {
+  if (paths.length === 0) return;
+  useAppStore.getState().setModule("editor");
+  for (const path of paths) {
+    await openPath(path);
+  }
+}
+
 function App() {
   const activeModule = useAppStore((s) => s.activeModule);
   const clipboardWatch = useAppStore((s) => s.clipboardWatch);
-  const setClipboardHasJson = useAppStore((s) => s.setClipboardHasJson);
   const theme = useThemeStore((s) => s.theme);
 
   useEffect(() => {
     applyThemeToDom(theme);
   }, [theme]);
 
-  // 剪贴板监听（轮询）
+  // 剪贴板监听（轮询）。空剪贴板也会清掉角标。
   useEffect(() => {
     if (!clipboardWatch || !isTauri()) return;
-    let last = "";
+    let last: string | null = null;
+    let cancelled = false;
     const check = async () => {
       try {
-        const text = await readText();
-        if (!text || text === last) return;
+        const text = (await readText()) ?? "";
+        if (cancelled || text === last) return;
         last = text;
-        const r = parseJson(text);
-        setClipboardHasJson(r.ok);
+        const ok = text.trim().length > 0 && parseJson(text).ok;
+        useAppStore.getState().setClipboardStatus(ok ? text : null);
       } catch {
-        /* ignore */
+        /* 剪贴板暂时不可读 */
       }
     };
-    check();
-    const timer = setInterval(check, 1500);
-    return () => clearInterval(timer);
-  }, [clipboardWatch, setClipboardHasJson]);
+    void check();
+    const timer = setInterval(() => void check(), 1500);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [clipboardWatch]);
 
-  // 文件拖拽 + 打开方式关联
+  // 拖入文件。Tauri 2 的 drop 载荷是 { paths, position }，不能当成 string[]。
   useEffect(() => {
     if (!isTauri()) return;
-    const unlisten = listen<string[]>("tauri://drag-drop", (e) => {
-      e.payload.forEach((path) => openPath(path));
-    });
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    getCurrentWebview()
+      .onDragDropEvent((event) => {
+        if (event.payload.type !== "drop") return;
+        void openPathsInEditor(event.payload.paths);
+      })
+      .then((fn) => {
+        if (cancelled) fn();
+        else unlisten = fn;
+      })
+      .catch((err) => console.error("监听拖拽失败", err));
     return () => {
-      unlisten.then((fn) => fn());
+      cancelled = true;
+      unlisten?.();
+    };
+  }, []);
+
+  // 系统「打开方式」/ 启动时带入的文件。先订阅再取队列，避免冷启动事件被丢掉。
+  useEffect(() => {
+    if (!isTauri()) return;
+    let unlisten: (() => void) | undefined;
+    let cancelled = false;
+    const drain = async () => {
+      try {
+        const paths = await invoke<string[]>("take_pending_opens");
+        if (!cancelled) await openPathsInEditor(paths);
+      } catch (err) {
+        console.error("读取启动文件失败", err);
+      }
+    };
+    listen(OPEN_FILES_EVENT, () => {
+      void drain();
+    })
+      .then((fn) => {
+        if (cancelled) {
+          fn();
+          return;
+        }
+        unlisten = fn;
+        void drain();
+      })
+      .catch((err) => {
+        console.error("监听打开文件失败", err);
+        void drain();
+      });
+    return () => {
+      cancelled = true;
+      unlisten?.();
     };
   }, []);
 

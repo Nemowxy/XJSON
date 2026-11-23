@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import type { Tab } from "@/types";
 import { uid } from "@/lib/utils";
+import { useAppStore } from "@/stores/appStore";
 
 export type PanelLayout = "split" | "tree-only" | "raw-only";
 
@@ -86,12 +87,14 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   newScratchTab: (content = "") => {
     const n =
       get().tabs.filter((t) => t.isNew).length + 1;
-    return get().openTab({
+    const id = get().openTab({
       fileName: `untitled-${n}.json`,
       content,
       isDirty: content.trim().length > 0,
       isNew: true,
     });
+    useAppStore.getState().addRecent(content);
+    return id;
   },
 
   setActive: (activeTabId) =>

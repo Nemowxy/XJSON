@@ -1,7 +1,11 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { ModuleKey, RecentItem } from "@/types";
+import { parseJson } from "@/lib/json";
 import { uid, truncate } from "@/lib/utils";
+
+/** localStorage quota is shared with the rest of the app. Skip huge lockfiles. */
+const MAX_RECENT_CHARS = 100_000;
 
 interface AppState {
   activeModule: ModuleKey;
@@ -11,7 +15,8 @@ interface AppState {
   clipboardWatch: boolean;
   toggleClipboardWatch: () => void;
   clipboardHasJson: boolean; // 角标提示
-  setClipboardHasJson: (v: boolean) => void;
+  clipboardText: string | null; // 最近一次检测到的合法 JSON，不持久化
+  setClipboardStatus: (text: string | null) => void;
 
   // 最近片段（限 20）
   recents: RecentItem[];
@@ -30,14 +35,22 @@ export const useAppStore = create<AppState>()(
 
       clipboardWatch: false,
       toggleClipboardWatch: () =>
-        set((s) => ({ clipboardWatch: !s.clipboardWatch, clipboardHasJson: false })),
+        set((s) => ({
+          clipboardWatch: !s.clipboardWatch,
+          clipboardHasJson: false,
+          clipboardText: null,
+        })),
       clipboardHasJson: false,
-      setClipboardHasJson: (clipboardHasJson) => set({ clipboardHasJson }),
+      clipboardText: null,
+      setClipboardStatus: (clipboardText) =>
+        set({ clipboardText, clipboardHasJson: clipboardText !== null }),
 
       recents: [],
       addRecent: (content) => {
         const trimmed = content.trim();
-        if (!trimmed) return;
+        // 只记录成功解析的 JSON。超长文件（例如 lockfile）不写入，避免撑满 localStorage。
+        if (!trimmed || trimmed.length > MAX_RECENT_CHARS) return;
+        if (!parseJson(trimmed).ok) return;
         const existing = get().recents.filter((r) => r.content !== trimmed);
         const item: RecentItem = {
           id: uid(),

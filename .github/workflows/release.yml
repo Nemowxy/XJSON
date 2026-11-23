@@ -38,7 +38,8 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             name: macOS-ARM64
-          - os: macos-13
+          # macos-13 was retired on 2025-12-04. Same Intel runner as build.yml.
+          - os: macos-15-intel
             target: x86_64-apple-darwin
             name: macOS-Intel
           - os: ubuntu-22.04
@@ -79,7 +80,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Upload Release Asset (macOS DMG)
-        if: matrix.platform.os == 'macos-latest'
+        if: matrix.platform.target == 'aarch64-apple-darwin' || matrix.platform.target == 'x86_64-apple-darwin'
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -12,13 +12,15 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "XJSON",
         "width": 1320,
         "height": 860,
         "minWidth": 900,
         "minHeight": 600,
-        "titleBarStyle": "Overlay",
-        "hiddenTitle": true,
+        "decorations": true,
+        "titleBarStyle": "Visible",
+        "hiddenTitle": false,
         "dragDropEnabled": true
       }
     ],

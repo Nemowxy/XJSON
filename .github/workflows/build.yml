@@ -37,7 +37,10 @@ jobs:
           - os: macos-latest
             target: aarch64-apple-darwin
             name: macOS (Apple Silicon)
-          - os: macos-13
+          # macos-13 was retired on 2025-12-04 and jobs on that label are cancelled.
+          # macos-15-intel is the hosted x86_64 replacement (through August 2027).
+          # Intel stays so CI still produces an x86_64 .dmg next to Apple Silicon.
+          - os: macos-15-intel
             target: x86_64-apple-darwin
             name: macOS (Intel)
           - os: ubuntu-22.04
@@ -78,7 +81,7 @@ jobs:
           TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
 
       - name: Upload artifacts (macOS)
-        if: matrix.platform.os == 'macos-latest'
+        if: matrix.platform.target == 'aarch64-apple-darwin' || matrix.platform.target == 'x86_64-apple-darwin'
         uses: actions/upload-artifact@v4
         with:
           name: xjson-${{ matrix.platform.target }}
